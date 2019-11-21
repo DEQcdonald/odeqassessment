@@ -21,7 +21,7 @@ TP_assessment <- function(TP_data) {
                     sample_datetime = if_else(tp_summer == 1, as.POSIXct("2019-07-01 00:00:00"),
                                               as.POSIXct("2019-01-01 00:00:00"))
       ) %>%
-      dplyr::filter(stat.base == "median") %>% dplyr::group_by(MLocID, Char_Name, Statistical_Base, tp_year, tp_month, tp_summer, sample_datetime) %>%
+      dplyr::filter(stat.base == "median") %>% dplyr::group_by(MLocID, Char_Name, StationDes, Statistical_Base, tp_year, tp_month, tp_summer, sample_datetime) %>%
       dplyr::summarise(tp_median = median(Result_cen, na.rm = TRUE),
                        Result_cen = tp_median,
                        TP_crit = unique(TP_crit),
