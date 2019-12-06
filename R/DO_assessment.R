@@ -217,9 +217,11 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
                                                  0,
                                                  if_else(yr_excursion == 1,
                                                          1,
-                                                         0)
+                                                         0
                                                  )
-                 ) %>%
+                                         )
+                 )
+  ) %>%
     select(-startdate30, -startdate7) %>%
     ungroup()
 
