@@ -211,7 +211,14 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
   data <- mutate(data,
                  yr_excursion = if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
                  spawn_excursion = if_else((in_spawn == 1) & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
-                 excursion_cen = if_else(1 %in% c(yr_excursion, spawn_excursion), 1, 0)
+                 excursion_cen = if_else((in_spawn == 1) & (spawn_excursion == 1),
+                                         1,
+                                         if_else((in_spawn == 1) & (spawn_excursion == 0),
+                                                 0,
+                                                 if_else(yr_excursion == 1,
+                                                         1,
+                                                         0)
+                                                 )
                  ) %>%
     select(-startdate30, -startdate7) %>%
     ungroup()
