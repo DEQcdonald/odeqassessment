@@ -16,10 +16,12 @@ TP_assessment <- function(TP_data) {
   if("median" %in% TP_data$stat.base){
     tp_sum_medians <- TP_data %>%
       dplyr::mutate(tp_year = lubridate::year(sample_datetime),
-                    tp_month = if_else(tp_summer == 1, lubridate::month("2019-07-01 00:00:00", label = TRUE, abbr = TRUE),
+                    tp_month = if_else(tp_summer == 1,
+                                       lubridate::month("2019-07-01 00:00:00", label = TRUE, abbr = TRUE),
                                        lubridate::month("2019-01-01 00:00:00", label = TRUE, abbr = TRUE)),
-                    sample_datetime = if_else(tp_summer == 1, as.POSIXct("2019-07-01 00:00:00"),
-                                              as.POSIXct("2019-01-01 00:00:00"))
+                    sample_datetime = if_else(tp_summer == 1,
+                                              as.POSIXct(paste0(tp_year, "-07-01 00:00:00")),
+                                              as.POSIXct(paste0(tp_year, "-01-01 00:00:00")))
       ) %>%
       dplyr::filter(stat.base == "median") %>% dplyr::group_by(MLocID, Char_Name, StationDes, Statistical_Base, tp_year, tp_month, tp_summer, sample_datetime) %>%
       dplyr::summarise(tp_median = median(Result_cen, na.rm = TRUE),
