@@ -52,7 +52,7 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
       Start_spawn = if_else(End_spawn < Start_spawn & sample_datetime <= End_spawn, Start_spawn - years(1), # subtract a year if in spawn period carrying from previous year
                             Start_spawn), # otherwise, keep Start_spawn as current year
       # Flag for results in spawning and/or critical period
-      in_spawn = if_else(sample_datetime >= Start_spawn & sample_datetime <= End_spawn & !is.na(Start_spawn), 1, 0 ),
+      Spawn_type = if_else(sample_datetime >= Start_spawn & sample_datetime <= End_spawn & !is.na(Start_spawn), "Spawn", "Not_Spawn" ),
       is.crit = if_else(sample_datetime >= critstart & sample_datetime <= critend, 1, 0 ))
 
   data <- data %>% dplyr::mutate(yr_exc_30DADMean = as.numeric(NaN),
@@ -210,10 +210,10 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
 
   data <- mutate(data,
                  yr_excursion = if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
-                 spawn_excursion = if_else((in_spawn == 1) & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
-                 excursion_cen = if_else((in_spawn == 1) & (spawn_excursion == 1),
+                 spawn_excursion = if_else((Spawn_type == "Spawn") & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
+                 excursion_cen = if_else((Spawn_type == "Spawn") & (spawn_excursion == 1),
                                          1,
-                                         if_else((in_spawn == 1) & (spawn_excursion == 0),
+                                         if_else((Spawn_type == "Spawn") & (spawn_excursion == 0),
                                                  0,
                                                  if_else(yr_excursion == 1,
                                                          1,
