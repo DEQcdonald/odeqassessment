@@ -208,19 +208,18 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
   print("Evaluating excursions...")
   data <- bind_rows(sat_data_30d, sat_data_7d, sat_data_inst, sat_data_min, DO_7DADMin)
 
-  data <- mutate(data,
-                 yr_excursion = if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
-                 spawn_excursion = if_else((Spawn_type == "Spawn") & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
-                 excursion_cen = if_else((Spawn_type == "Spawn") & (spawn_excursion == 1),
-                                         1,
-                                         if_else((Spawn_type == "Spawn") & (spawn_excursion == 0),
-                                                 0,
-                                                 if_else(yr_excursion == 1,
-                                                         1,
-                                                         0
-                                                 )
-                                         )
-                 )
+  data <- data %>% rowwise() %>% mutate(yr_excursion = if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
+                                        spawn_excursion = if_else((Spawn_type == "Spawn") & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
+                                        excursion_cen = if_else((Spawn_type == "Spawn") & (spawn_excursion == 1),
+                                                                1,
+                                                                if_else((Spawn_type == "Spawn") & (spawn_excursion == 0),
+                                                                        0,
+                                                                        if_else(yr_excursion == 1,
+                                                                                1,
+                                                                                0
+                                                                        )
+                                                                )
+                                        )
   ) %>%
     select(-startdate30, -startdate7) %>%
     ungroup()
