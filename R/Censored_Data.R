@@ -25,10 +25,10 @@ Censored_data <- function(df, results = "Result_Numeric", results_qualifier = "R
   # Perform censored data modifications
   Results_censored <- df %>%
     # Get lowest criteria value to set censored results
-    mutate(Result_cen = ifelse(!!results_qualifier == "=", as.numeric(!!results),
-                                ifelse(!!results_qualifier == ">", as.numeric(!!results), 
-                                       ifelse(!!results_qualifier == "<", ifelse(!!results > as.numeric(!!criteria), 0.5 * as.numeric(!!criteria) , 0.5 * as.numeric(!!results) ), "ER" )))) %>%
-    mutate(Result_cen = as.numeric(Result_cen))
+    dplyr::mutate(Result_cen = ifelse(!!results_qualifier == "=", as.numeric(!!results),
+                                      ifelse(!!results_qualifier == ">", as.numeric(!!results), 
+                                             ifelse(!!results_qualifier == "<", ifelse(!!results > as.numeric(!!criteria), 0.5 * as.numeric(!!criteria) , 0.5 * as.numeric(!!results) ), "ER" )))) %>%
+    dplyr::mutate(Result_cen = as.numeric(Result_cen))
   
   return(Results_censored)
   
