@@ -9,6 +9,6 @@
 
 excursions_conv <- function(n){
   
-  x = ifelse(n <= 11, 2, qbinom(0.90, n, 0.10, lower.tail = TRUE)+1 )
+  x = ifelse(n <= 11, 2, stats::qbinom(0.90, n, 0.10, lower.tail = TRUE)+1 )
   return(x)
 }

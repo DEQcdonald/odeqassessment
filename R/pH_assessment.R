@@ -10,9 +10,9 @@
 
 pH_assessment <- function(pH_data) {
   pH_summary <- pH_data %>%
-    mutate(pH_excursion = if_else(Result_cen < pH_Min | Result_cen > pH_Max, 1, 0 ),
-           pH_excursion_high = if_else(Result_cen > pH_Max, 1, 0 ),
-           pH_excursion_low = if_else(Result_cen < pH_Min, 1, 0 )
+    dplyr::mutate(pH_excursion = dplyr::if_else(Result_cen < pH_Min | Result_cen > pH_Max, 1, 0 ),
+                  pH_excursion_high = dplyr::if_else(Result_cen > pH_Max, 1, 0 ),
+                  pH_excursion_low = dplyr::if_else(Result_cen < pH_Min, 1, 0 )
     )
   
   pH_summary$excursion_cen <- pH_summary$pH_excursion
