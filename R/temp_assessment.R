@@ -25,44 +25,44 @@ temp_assessment <- function(df, datetime_column = "sample_datetime", spawn_start
   criteria <- as.symbol(criteria_column)
   
   temp_analysis <- df %>%
-    mutate(
+    dplyr::mutate(
       # Add columns for Critcal period start and end date
-      Crit_period_start = mdy(paste0("7/1/",year(sample_datetime))),
-      Crit_period_end = mdy(paste0("9/30/",year(sample_datetime))),
+      Crit_period_start = lubridate::mdy(paste0("7/1/",lubridate::year(sample_datetime))),
+      Crit_period_end = lubridate::mdy(paste0("9/30/",lubridate::year(sample_datetime))),
       # Append spawn start and end dates with year
-      Start_spawn = ifelse(!is.na(spawn_start), paste0(spawn_start,"/",year(sample_datetime)), NA ) ,
-      End_spawn = ifelse(!is.na(spawn_end), paste0(spawn_end,"/",year(sample_datetime)), NA ),
+      Start_spawn = ifelse(!is.na(spawn_start), paste0(spawn_start,"/",lubridate::year(sample_datetime)), NA ) ,
+      End_spawn = ifelse(!is.na(spawn_end), paste0(spawn_end,"/",lubridate::year(sample_datetime)), NA ),
       # Make spwnmn start and end date date format
-      Start_spawn = mdy(Start_spawn),
-      End_spawn = mdy(End_spawn),
+      Start_spawn = lubridate::mdy(Start_spawn),
+      End_spawn = lubridate::mdy(End_spawn),
       # If Spawn dates span a calendar year, account for year change in spawn end date
-      End_spawn = if_else(End_spawn < Start_spawn & sample_datetime >= End_spawn, End_spawn + years(1), # add a year if in spawn period carrying to next year
-                          End_spawn), # otherwise, keep End_spawn as current year
-      Start_spawn = if_else(End_spawn < Start_spawn & sample_datetime <= End_spawn, Start_spawn - years(1), # subtract a year if in spawn period carrying from previous year
-                           Start_spawn), # otherwise, keep Start_spawn as current year
+      End_spawn = dplyr::if_else(End_spawn < Start_spawn & sample_datetime >= End_spawn, End_spawn + lubridate::years(1), # add a year if in spawn period carrying to next year
+                                 End_spawn), # otherwise, keep End_spawn as current year
+      Start_spawn = dplyr::if_else(End_spawn < Start_spawn & sample_datetime <= End_spawn, Start_spawn - lubridate::years(1), # subtract a year if in spawn period carrying from previous year
+                                   Start_spawn), # otherwise, keep Start_spawn as current year
       # Flag for results in critical period
       In_crit_period = ifelse(sample_datetime >= Crit_period_start & sample_datetime <= Crit_period_end, 1, 0 ),
       # Print if result is in spawn or out of spawn
       Spawn_type = ifelse((sample_datetime >= Start_spawn & sample_datetime <= End_spawn & !is.na(Start_spawn)),  "Spawn", "Not_Spawn")
     ) %>%
-    arrange(sample_datetime)
+    dplyr::arrange(sample_datetime)
   
   # Flag if result does not attain standard,  use 13 for during spawn dates, else use criteria
-  temp_analysis$excursion = if_else((temp_analysis$Spawn_type == "Spawn" & temp_analysis[,result_column] > 13), 1,
-                                    if_else(temp_analysis$Spawn_type == "Not_Spawn" & temp_analysis[,result_column] > temp_analysis[, criteria_column], 1, 0)
+  temp_analysis$excursion = dplyr::if_else((temp_analysis$Spawn_type == "Spawn" & temp_analysis[,result_column] > 13), 1,
+                                           dplyr::if_else(temp_analysis$Spawn_type == "Not_Spawn" & temp_analysis[,result_column] > temp_analysis[, criteria_column], 1, 0)
   )
   # Flag for if excursion was in spawn period
-  temp_analysis$Spawn_excursion = if_else(temp_analysis$Spawn_type == "Spawn" & temp_analysis$excursion == 1, 1, 0 )
+  temp_analysis$Spawn_excursion = dplyr::if_else(temp_analysis$Spawn_type == "Spawn" & temp_analysis$excursion == 1, 1, 0 )
   
   # For each observation, determine the number of excursions within the last 3 years, the number of samples
   # within the critical period, and the number of samples in the spawning period, all for the same station.
   cat(paste("Checking within a 3 year period from sample date for the number of previous excursions",
-              "and the number of samples taken during spawning and critical periods...\n"))
-  temp_analysis <- bind_rows(
+            "and the number of samples taken during spawning and critical periods...\n"))
+  temp_analysis <- dplyr::bind_rows(
     pbapply::pblapply(unique(temp_analysis$MLocID), function(x, df){
       cat(paste("\nStation: ", x, "(", which(unique(df$MLocID) == x), "out of", length(unique(df$MLocID)), ")\n"))
-      subData <- filter(df, MLocID == x)
-      subData <- bind_cols(
+      subData <- dplyr::filter(df, MLocID == x)
+      subData <- dplyr::bind_cols(
         subData,
         dplyr::bind_rows(pbapply::pblapply(subData$sample_datetime, 
                                            function(x, df){
