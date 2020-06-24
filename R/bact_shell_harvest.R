@@ -8,23 +8,24 @@
 #' @examples function(df = your_ecoli_data, criteria = "bact-shell-crit")
 
 Shell_Harvest <- function(df, per_criteria = "bact_crit_percent", ss_criteria = "bact_crit_ss") {
-  
+
   print("Begin shellfish harvesting analysis")
-  
+
   Perc_Crit <- as.symbol(per_criteria)
   SS_Crit <- as.symbol(ss_criteria)
-  
+
   shell_harvest <- df %>%
     dplyr::filter(BacteriaCode == 3,
                   Char_Name == "Fecal Coliform") %>%
-    dplyr::mutate(perc_exceed = ifelse(Result_cen > !!Perc_Crit, 1, 0))
-  
+    dplyr::mutate(perc_exceed = ifelse(Result_cen > !!Perc_Crit, 1, 0),
+                  ss_excursion = ifelse(Result_cen > !!SS_Crit, 1, 0))
+
   # if(nrow(shell_harvest) == 0) {
   #   stop("No available data")
   # }
-  
+
   return(shell_harvest)
-  
+
   # shell_harvest_analysis <- shell_harvest %>%
   #   group_by(MLocID, OWRD_Basin) %>%
   #   summarise(num_samples = n(),
@@ -35,5 +36,5 @@ Shell_Harvest <- function(df, per_criteria = "bact_crit_percent", ss_criteria = 
   #   )
   #
   # return(shell_harvest_analysis)
-  
+
 }
