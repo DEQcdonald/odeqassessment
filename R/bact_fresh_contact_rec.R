@@ -73,7 +73,7 @@ Fresh_Contact_rec <- function(df, datetime_column = "sample_datetime"){
       #get count of 90 day period
       fresh_singlestation[j,"count_period"] <- count_period
       # get number of samples that are above criteria if more than 5 samples in 90 day period
-      Coastal_singlestation[j,"n_above_crit"] <- ifelse(count_period >= 5, sum(geomean_period$Result_cen > 406), NA)
+      fresh_singlestation[j,"n_above_crit"] <- ifelse(count_period >= 5, sum(geomean_period$Result_cen > 406), NA)
 
     }
 
