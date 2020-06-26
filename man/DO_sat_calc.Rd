@@ -14,7 +14,7 @@ DO_sat_calc(DO, TempC, elevft)
 \item{elevft}{Elevation value in feet}
 }
 \description{
-This function will calculate DO saturation percentage 
+This function will calculate DO saturation percentage
 based on DO mg/L values, temperature in C, and elevcation in ft
 This function is based on the equation found in The Dissolved
 Ocygen Water Quality Standard Implementatiion Guidence.

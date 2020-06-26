@@ -4,7 +4,8 @@
 \alias{Shell_Harvest}
 \title{Bacteria Shell Harvest Analysis}
 \usage{
-Shell_Harvest(df, criteria = "bact_crit_percent")
+Shell_Harvest(df, per_criteria = "bact_crit_percent",
+  ss_criteria = "bact_crit_ss")
 }
 \arguments{
 \item{df}{dataframe with Ecoli data}

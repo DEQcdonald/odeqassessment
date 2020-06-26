@@ -18,8 +18,8 @@ DO_30DADMean_calc(station, start_date, end_date, df, n = 29)
 \item{end}{The the last day in the 30 day period}
 }
 \description{
-This function will calculate 30DADMean DO saturation percentage 
-based on daily mean DO sat values. It takes a station, start date, 
+This function will calculate 30DADMean DO saturation percentage
+based on daily mean DO sat values. It takes a station, start date,
 end date (totaling 30 days), and a dataframe with mean DO sat values.
 }
 \examples{
