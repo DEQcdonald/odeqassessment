@@ -63,8 +63,8 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
                                  spwn_exc_inst = as.numeric(NaN),
                                  spwn_exc_7DADMean = as.numeric(NaN),
                                  spwn_exc_min = as.numeric(NaN),
-                                 startdate7 = NA,
-                                 startdate30 = NA)
+                                 startdate7 = NA_Date_,
+                                 startdate30 = NA_Date_)
 
   # data <- data %>%
   #   filter(Statistical_Base %in% c("30DADMean", "7DADMin", '7DADMean', "Minimum", NA)) %>%
