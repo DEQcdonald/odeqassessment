@@ -102,7 +102,8 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
     sat_data_30d <- sat_data_30d %>%
       dplyr::arrange(MLocID, sample_date) %>%
       dplyr::group_by(MLocID) %>%
-      dplyr::mutate(startdate30 = sample_date - 30)
+      dplyr::mutate(startdate30 = sample_date - 30) %>%
+      dplyr::ungroup()
 
     sat_data_30d$DO_sat_30DADM <- pbapply::pbmapply(DO_30DADMean_calc, sat_data_30d$MLocID,
                                                     sat_data_30d$startdate30, sat_data_30d$sample_date,
@@ -131,18 +132,26 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
     sat_data_7d <- merge(sat_data_7d, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Mean"),
                                                     MLocID, sample_date, temp_mean = Result_Numeric),
                          by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
-    sat_data_7d <- dplyr::mutate(sat_data_7d,
-                                 DO_sat = dplyr::if_else(is.na(DO_sat_mean),
-                                                         pbapply::pbmapply(DO_sat_calc, Result_cen, temp_mean, ELEV_Ft, USE.NAMES = FALSE),
-                                                         DO_sat_mean),
-                                 DO_sat = dplyr::if_else(DO_sat > 100, 100, DO_sat))
+    # sat_data_7d <- dplyr::mutate(sat_data_7d,
+    #                              DO_sat = dplyr::if_else(is.na(DO_sat_mean),
+    #                                                      pbapply::pbmapply(DO_sat_calc, Result_cen, temp_mean, ELEV_Ft, USE.NAMES = FALSE),
+    #                                                      DO_sat_mean),
+    #                              DO_sat = dplyr::if_else(DO_sat > 100, 100, DO_sat))
+
+    sat_data_7d$DO_sat <- dplyr::if_else(is.na(sat_data_7d$DO_sat_mean),
+                                         pbapply::pbmapply(DO_sat_calc, sat_data_7d$Result_cen, sat_data_7d$temp_mean, sat_data_7d$ELEV_Ft, USE.NAMES = FALSE),
+                                         sat_data_7d$DO_sat_mean)
+
+    sat_data_7d$DO_sat = dplyr::if_else(sat_data_7d$DO_sat > 100, 100, sat_data_7d$DO_sat)
+
     sat_data_7d <- sat_data_7d %>%
       dplyr::arrange(MLocID, sample_date) %>%
       dplyr::group_by(MLocID) %>%
       dplyr::mutate(startdate7 = lag(sample_date, 6, order_by = sample_date),
                     # flag out which result gets a moving average calculated
                     calc7ma = ifelse(startdate7 == (sample_date - 6), 1, 0 ),
-                    DO_sat_7DADMean = ifelse(calc7ma == 1, round(zoo::rollmean(x = DO_sat, 7, align = "right", fill = NA),1) , NA ))
+                    DO_sat_7DADMean = ifelse(calc7ma == 1, round(zoo::rollmean(x = DO_sat, 7, align = "right", fill = NA),1) , NA )) %>%
+      dplyr::ungroup()
 
     sat_data_7d <- sat_data_7d %>% dplyr::mutate(spwn_exc_7DADMean = dplyr::if_else(Result_cen < 11,
                                                                                     dplyr::if_else(is.na(DO_sat_7DADMean) | DO_sat_7DADMean < 95,
@@ -150,7 +159,7 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
                                                                                     0)
     )
   }
-
+gc()
   # Calculate daily minimum DO sat values -----------------------------------
 
 
@@ -178,6 +187,7 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
                                                                                  0)
     )
   }
+gc()
 
   # Calculate instantaneous DO sat values -----------------------------------
 
@@ -206,7 +216,10 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
     )
   }
 
-  print("Evaluating excursions...")
+rm(list = ls()[ls() %in% c("data", "df")])
+gc()
+print("Evaluating excursions...")
+
   data <- dplyr::bind_rows(sat_data_30d, sat_data_7d, sat_data_inst, sat_data_min, DO_7DADMin)
 
   data <- data %>% dplyr::rowwise() %>% dplyr::mutate(yr_excursion = dplyr::if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
@@ -287,7 +300,7 @@ DO_30DADMean_calc <- function(station, start_date, end_date, df, n = 29){
     dplyr::group_by(sample_date) %>%
     dplyr::summarise(count = dplyr::if_else(any(!is.na(DO_sat)), 1, 0),
                      DO_sat_mean = mean(DO_sat, na.rm = TRUE)
-    )
+    ) %>% dplyr::ungroup()
 
   DO_sat_30DADMean <- dplyr::if_else(sum(data$count, na.rm = TRUE) >= n, mean(data$DO_sat_mean, na.rm = TRUE), NA_real_)
   return(DO_sat_30DADMean)
