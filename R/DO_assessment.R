@@ -22,6 +22,7 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
 
   print("Preparing data...")
 
+  df <- df %>% dplyr::select(-Lat_DD, -Long_DD, -HUC8, -Datum, -StationDes, -Result_Text, -Result_Operator)
   # Year round --------------------------------------------------------------
 
   sample_datetime <- as.symbol(datetime_column)
@@ -191,21 +192,27 @@ gc()
 
   # Calculate instantaneous DO sat values -----------------------------------
 
-  sat_data_inst <- data %>% dplyr::filter(is.na(Statistical_Base)
+  sat_data_inst <- data %>% dplyr::filter(is.na(Statistical_Base)) %>%
+                                            dplyr::select(-yr_exc_30DADMean, -yr_exc_7DADMin, -yr_exc_inst, -yr_exc_min,
+                                                          -spwn_exc_7DADMean, -spwn_exc_min)
                                           # , yr_excursion == 1
-  )
+  # )
   if(nrow(sat_data_inst) > 0){
     print("Calculating instantaneous DO sat values...")
     sat_data_inst <- merge(sat_data_inst, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", is.na(Statistical_Base)),
                                                         MLocID, sample_date, DO_sat = Result_cen),
                            by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
     sat_data_inst <- merge(sat_data_inst, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", is.na(Statistical_Base)),
-                                                        MLocID, sample_date, temperature = Result_Numeric),
-                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
+                                                        MLocID, sample_date, sample_datetime, temperature = Result_Numeric),
+                           by = c("MLocID", "sample_datetime"), all.x = TRUE, all.y = FALSE)
+
+    sat_data_inst$DO_sat <- dplyr::if_else(is.na(sat_data_inst$DO_sat),
+                                           pbapply::pbmapply(DO_sat_calc, sat_data_inst$Result_cen, sat_data_inst$temperature, sat_data_inst$ELEV_Ft, USE.NAMES = FALSE),
+                                           sat_data_inst$DO_sat)
     sat_data_inst <- dplyr::mutate(sat_data_inst,
-                                   DO_sat = dplyr::if_else(is.na(DO_sat),
-                                                           pbapply::pbmapply(DO_sat_calc, Result_cen, temperature, ELEV_Ft, USE.NAMES = FALSE),
-                                                           DO_sat),
+                                   # DO_sat = dplyr::if_else(is.na(DO_sat),
+                                   #                         pbapply::pbmapply(DO_sat_calc, Result_cen, temperature, ELEV_Ft, USE.NAMES = FALSE),
+                                   #                         DO_sat),
                                    DO_sat = dplyr::if_else(DO_sat > 100, 100, DO_sat))
 
     sat_data_inst <- sat_data_inst %>% dplyr::mutate(yr_exc_inst = dplyr::if_else(Result_cen < Do_crit_instant, 1, 0),
@@ -220,22 +227,32 @@ rm(list = ls()[ls() %in% c("data", "df")])
 gc()
 print("Evaluating excursions...")
 
-  data <- dplyr::bind_rows(sat_data_30d, sat_data_7d, sat_data_inst, sat_data_min, DO_7DADMin)
+sat_data_inst_1 <- sat_data_inst[1:(nrow(sat_data_inst)/2),]
+sat_data_inst <- sat_data_inst[((nrow(sat_data_inst)/2)+1):nrow(sat_data_inst),]
 
-  data <- data %>% dplyr::rowwise() %>% dplyr::mutate(yr_excursion = dplyr::if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
-                                                      spawn_excursion = dplyr::if_else((Spawn_type == "Spawn") & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
-                                                      excursion_cen = dplyr::if_else((Spawn_type == "Spawn") & (spawn_excursion == 1),
-                                                                                     1,
-                                                                                     dplyr::if_else((Spawn_type == "Spawn") & (spawn_excursion == 0),
-                                                                                                    0,
-                                                                                                    dplyr::if_else(yr_excursion == 1,
-                                                                                                                   1,
-                                                                                                                   0
-                                                                                                    )
-                                                                                     )
-                                                      )
-  ) %>%
-    dplyr::select(-startdate30, -startdate7) %>%
+  data <- dplyr::bind_rows(sat_data_30d, sat_data_7d, sat_data_min, DO_7DADMin)
+  data <- dplyr::bind_rows(data, sat_data_inst_1)
+  rm(sat_data_inst_1)
+  gc()
+  data <- dplyr::bind_rows(data, sat_data_inst)
+
+
+  data <- data %>% dplyr::select(-startdate30, -startdate7)
+  data <- data %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(yr_excursion = dplyr::if_else(1 %in% c(yr_exc_30DADMean, yr_exc_7DADMin, yr_exc_inst, yr_exc_min), 1, 0),
+                  spawn_excursion = dplyr::if_else((Spawn_type == "Spawn") & (1 %in% c(spwn_exc_inst, spwn_exc_7DADMean, spwn_exc_min)), 1, 0),
+                  excursion_cen = dplyr::if_else((Spawn_type == "Spawn") & (spawn_excursion == 1),
+                                                 1,
+                                                 dplyr::if_else((Spawn_type == "Spawn") & (spawn_excursion == 0),
+                                                                0,
+                                                                dplyr::if_else(yr_excursion == 1,
+                                                                               1,
+                                                                               0
+                                                                )
+                                                 )
+                  )
+    ) %>%
     ungroup()
 
   # data <- data %>% mutate(excursion_cen = if_else(Statistical_Base == "30DADMean" & yr_excursion == 1 & DO_Class == "Cold Water",
@@ -255,9 +272,9 @@ print("Evaluating excursions...")
 #' DO saturation percent calculator
 #'
 #' This function will calculate DO saturation percentage
-#' based on DO mg/L values, temperature in C, and elevcation in ft
+#' based on DO mg/L values, temperature in C, and elevation in ft
 #' This function is based on the equation found in The Dissolved
-#' Ocygen Water Quality Standard Implementatiion Guidence.
+#' Oxygen Water Quality Standard Implementatiion Guidence.
 #' This function differs from the oxySol function in the wql package
 #' because it calcultaes the percentage dirrectly and incorporates elevation,
 #' as opposed to pressure
