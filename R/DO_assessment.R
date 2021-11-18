@@ -22,7 +22,6 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
 
   print("Preparing data...")
 
-  df <- df %>% dplyr::select(-Lat_DD, -Long_DD, -HUC8, -Datum, -StationDes, -Result_Text, -Result_Operator)
   # Year round --------------------------------------------------------------
 
   sample_datetime <- as.symbol(datetime_column)
