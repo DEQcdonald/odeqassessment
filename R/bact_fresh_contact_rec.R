@@ -90,11 +90,14 @@ Fresh_Contact_rec <- function(df, datetime_column = "sample_datetime"){
                   critical_excursions = odeqassessment::excursions_req(count_period),
                   ss_excursion = if_else(Result_cen > bact_crit_ss, 1, 0),
                   geomean_excursion = if_else(is.na(geomean), 0,
-                                              if_else(count_period >= 5 & geomean > bact_crit_geomean, 1, 0)),
+                                              if_else(geomean > bact_crit_geomean, 1, 0)),
                   perc_exceed = if_else(count_period >= 5 & n_above_crit > critical_excursions, 1, 0),
-                  excursion_cen = if_else(ss_excursion == 1 | geomean_excursion == 1 | perc_exceed == 1,
+                  excursion_cen = if_else(count_period < 5,
+                                          NaN,
+                                          if_else(ss_excursion == 1 | geomean_excursion == 1 | perc_exceed == 1,
                                                   1,
                                                   0)
+                                          )
     )
 
   print("Finish fresh contact rec analysis")
