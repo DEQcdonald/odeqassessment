@@ -92,14 +92,16 @@ Fresh_Contact_rec <- function(df, datetime_column = "sample_datetime"){
                   geomean_excursion = if_else(is.na(geomean), 0,
                                               if_else(geomean > bact_crit_geomean, 1, 0)),
                   perc_exceed = if_else(count_period >= 5 & n_above_crit > critical_excursions, 1, 0),
-                  excursion_cen = if_else(count_period < 5,
+                  excursion_cen = if_else(count_period < 1,
                                           NaN,
-                                          if_else(ss_excursion == 1 | geomean_excursion == 1 | perc_exceed == 1,
-                                                  1,
-                                                  0)
+                                          if_else(count_period >= 1 & count_period < 5,
+                                                  3,
+                                                  if_else(ss_excursion == 1 | geomean_excursion == 1 | perc_exceed == 1,
+                                                          1,
+                                                          0)
                                           )
+                  )
     )
-
   print("Finish fresh contact rec analysis")
   return(fresh_analysis)
 
