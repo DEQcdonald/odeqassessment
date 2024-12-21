@@ -51,7 +51,8 @@ Fresh_Contact_rec <- function(df, datetime_column = "sample_datetime"){
     # Filter table down to single station
     fresh_singlestation <- fresh_contact %>%
       dplyr::filter(MLocID == station) %>%
-      dplyr::mutate(geomean_start_date = as.Date(!!SampleStartDate)-90)
+      dplyr::mutate(geomean_start_date = as.Date(!!SampleStartDate)-90) %>%
+      as.data.frame()
     #print(paste("i = ", i))
 
     for(j in 1:nrow(fresh_singlestation)){
