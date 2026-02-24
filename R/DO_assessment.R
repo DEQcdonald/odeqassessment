@@ -19,6 +19,7 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
   library(lubridate)
   library(zoo)
   library(pbapply)
+  library(data.table)
 
   print("Preparing data...")
 
@@ -87,10 +88,10 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
   )
   if(nrow(sat_data_30d) > 0){
     print("Calculating 30DADMean DO sat values...")
-    sat_data_30d <- merge(sat_data_30d, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Mean"),
+    sat_data_30d <- data.table::merge.data.table(sat_data_30d, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Mean"),
                                                       MLocID, sample_date, DO_sat_mean = Result_cen),
                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
-    sat_data_30d <- merge(sat_data_30d, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Mean"),
+    sat_data_30d <- data.table::merge.data.table(sat_data_30d, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Mean"),
                                                       MLocID, sample_date, temp_mean = Result_Numeric),
                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
     sat_data_30d <- dplyr::mutate(sat_data_30d,
@@ -126,10 +127,10 @@ DO_assessment <- function(df, datetime_column = "sample_datetime", spawn_start_c
   if(nrow(sat_data_7d) > 0){
     print("Calculating 7DADMean DO sat values...")
 
-    sat_data_7d <- merge(sat_data_7d, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Mean"),
+    sat_data_7d <- data.table::merge.data.table(sat_data_7d, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Mean"),
                                                     MLocID, sample_date, DO_sat_mean = Result_cen),
                          by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
-    sat_data_7d <- merge(sat_data_7d, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Mean"),
+    sat_data_7d <- data.table::merge.data.table(sat_data_7d, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Mean"),
                                                     MLocID, sample_date, temp_mean = Result_Numeric),
                          by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
     # sat_data_7d <- dplyr::mutate(sat_data_7d,
@@ -168,10 +169,10 @@ gc()
   )
   if(nrow(sat_data_min) > 0){
     print("Calculating minimum DO sat values...")
-    sat_data_min <- merge(sat_data_min, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Minimum"),
+    sat_data_min <- data.table::merge.data.table(sat_data_min, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", Statistical_Base == "Minimum"),
                                                       MLocID, sample_date, DO_sat_min = Result_cen),
                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
-    sat_data_min <- merge(sat_data_min, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Minimum"),
+    sat_data_min <- data.table::merge.data.table(sat_data_min, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", Statistical_Base == "Minimum"),
                                                       MLocID, sample_date, temp_min = Result_Numeric),
                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
     sat_data_min <- dplyr::mutate(sat_data_min,
@@ -198,11 +199,13 @@ gc()
   # )
   if(nrow(sat_data_inst) > 0){
     print("Calculating instantaneous DO sat values...")
-    sat_data_inst <- merge(sat_data_inst, dplyr::select(dplyr::filter(df, Char_Name == "Dissolved oxygen saturation", is.na(Statistical_Base)),
-                                                        MLocID, sample_date, DO_sat = Result_cen),
-                           by = c("MLocID", "sample_date"), all.x = TRUE, all.y = FALSE)
-    sat_data_inst <- merge(sat_data_inst, dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", is.na(Statistical_Base)),
-                                                        MLocID, sample_date, sample_datetime, temperature = Result_Numeric),
+    sat_data_inst <- data.table::merge.data.table(sat_data_inst, unique(dplyr::select(dplyr::filter(df,
+                                                                                                    Char_Name == "Dissolved oxygen saturation",
+                                                                                                    is.na(Statistical_Base)),
+                                                        MLocID, sample_datetime, DO_sat = Result_cen)),
+                           by = c("MLocID", "sample_datetime"), all.x = TRUE, all.y = FALSE)
+    sat_data_inst <- data.table::merge.data.table(sat_data_inst, unique(dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", is.na(Statistical_Base)),
+                                                        MLocID, sample_date, sample_datetime, temperature = Result_Numeric)),
                            by = c("MLocID", "sample_datetime"), all.x = TRUE, all.y = FALSE)
 
     sat_data_inst$DO_sat <- dplyr::if_else(is.na(sat_data_inst$DO_sat),
