@@ -237,7 +237,7 @@ gc()
 print("Evaluating excursions...")
 
 sat_data_inst_1 <- sat_data_inst[1:(nrow(sat_data_inst)/2),]
-sat_data_inst <- sat_data_inst[((nrow(sat_data_inst)/2)+1):nrow(sat_data_inst),]
+sat_data_inst <- sat_data_inst[round((nrow(sat_data_inst)/2)+1):nrow(sat_data_inst),]
 
   data <- dplyr::bind_rows(sat_data_30d, sat_data_7d, sat_data_min, DO_7DADMin)
   data <- dplyr::bind_rows(data, sat_data_inst_1)
