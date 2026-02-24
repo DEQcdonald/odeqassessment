@@ -199,13 +199,20 @@ gc()
   # )
   if(nrow(sat_data_inst) > 0){
     print("Calculating instantaneous DO sat values...")
-    sat_data_inst <- data.table::merge.data.table(sat_data_inst, unique(dplyr::select(dplyr::filter(df,
-                                                                                                    Char_Name == "Dissolved oxygen saturation",
-                                                                                                    is.na(Statistical_Base)),
-                                                        MLocID, sample_datetime, DO_sat = Result_cen)),
+    do_sat_lookup <- df %>%
+      dplyr::filter(Char_Name == "Dissolved oxygen saturation",
+                    is.na(Statistical_Base)) %>%
+      dplyr::select(MLocID, sample_datetime, DO_sat = Result_cen) %>%
+      dplyr::group_by(MLocID, sample_datetime) %>%
+      dplyr::summarise(DO_sat = mean(DO_sat, na.rm=T))
+    do_temp_lookup <- df %>%
+      filter(Char_Name == "Temperature, water", is.na(Statistical_Base)) %>%
+      dplyr::select(MLocID, sample_date, sample_datetime, temperature = Result_Numeric) %>%
+      dplyr::group_by(MLocID, sample_datetime) %>%
+      dplyr::summarise(temperature = max(temperature, na.rm = T))
+    sat_data_inst <- data.table::merge.data.table(sat_data_inst, do_sat_lookup,
                            by = c("MLocID", "sample_datetime"), all.x = TRUE, all.y = FALSE)
-    sat_data_inst <- data.table::merge.data.table(sat_data_inst, unique(dplyr::select(dplyr::filter(df, Char_Name == "Temperature, water", is.na(Statistical_Base)),
-                                                        MLocID, sample_date, sample_datetime, temperature = Result_Numeric)),
+    sat_data_inst <- data.table::merge.data.table(sat_data_inst, do_temp_lookup,
                            by = c("MLocID", "sample_datetime"), all.x = TRUE, all.y = FALSE)
 
     sat_data_inst$DO_sat <- dplyr::if_else(is.na(sat_data_inst$DO_sat),
